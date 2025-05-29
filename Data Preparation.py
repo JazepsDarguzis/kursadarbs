@@ -14,6 +14,7 @@ import kagglehub
 
 # Download latest version
 DATASET_PATH = kagglehub.dataset_download("satishpaladi11/mechanic-component-images-normal-defected")
+print(f"DATASET_PATH: {DATASET_PATH}")
 
 IMG_SIZE = (224, 224)
 
@@ -138,3 +139,4 @@ if __name__ == "__main__":
     for images, labels in train_loader:
         print(f"Batch shape: {images.shape}, Labels: {labels}")
         break
+
