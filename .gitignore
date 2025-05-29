@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Model and checkpoint files (large, do not track in git)
+model_for_raw_material.h5
+model_for_raw_material.keras
+checkpoint.weights.h5
+
