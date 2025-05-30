@@ -19,29 +19,33 @@ print(f"DATASET_PATH: {DATASET_PATH}")
 IMG_SIZE = (224, 224)
 
 # 1. Image Resizer + Standardization/Normalizer + Image transform + Tensor transform
-resize_transform = transforms.Compose([
-    transforms.Resize(IMG_SIZE),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+def resize_norm_trans(IMG_SIZE):
+    resize_transform = transforms.Compose([
+        transforms.Resize(IMG_SIZE),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    return resize_transform
 
 # 2. Data Augmentation + Image transform + Tensor transform
-augmentation_transform = A.Compose([
-    A.Rotate(limit=45, p=0.5),
-    A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
-    A.GaussianBlur(blur_limit=(3, 7), p=0.3),
-    A.RandomScale(scale_limit=0.2, p=0.3),
-    A.Affine(
-        scale=(0.9, 1.1),
-        translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},
-        rotate=(-45, 45),
-        p=0.3
-    ),
-    A.GaussNoise(p=0.2),
-    A.Resize(*IMG_SIZE),
-    A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ToTensorV2()
-])
+def data_augmentation(IMG_SIZE):
+    augmentation_transform = A.Compose([
+        A.Rotate(limit=45, p=0.5),
+        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+        A.GaussianBlur(blur_limit=(3, 7), p=0.3),
+        A.RandomScale(scale_limit=0.2, p=0.3),
+        A.Affine(
+            scale=(0.9, 1.1),
+            translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},
+            rotate=(-45, 45),
+            p=0.2 #0.3
+        ),
+        A.GaussNoise(p=0.2),
+        A.Resize(*IMG_SIZE),
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ToTensorV2()
+    ])
+    return augmentation_transform
 
 class DefectDataset(torch.utils.data.Dataset):
     def __init__(self, image_paths, labels, transform=None, augment=None):
@@ -99,6 +103,9 @@ def visualize_augmented_images(dataset, class_names, num_samples=5):
 
 # 6. Index Splitter + Handle Imbalanced Classes + Training set + Validation set
 def prepare_data(dataset_path):
+    resize_transform = resize_norm_trans(IMG_SIZE)
+    augmentation_transform = data_augmentation(IMG_SIZE)
+
     dataset = datasets.ImageFolder(dataset_path)
     image_paths = [os.path.join(dataset_path, img[0]) for img in dataset.imgs]
     labels = [img[1] for img in dataset.imgs]
@@ -122,9 +129,9 @@ def prepare_data(dataset_path):
     train_dataset = DefectDataset(train_paths, train_labels, transform=resize_transform, augment=augmentation_transform)
     val_dataset = DefectDataset(val_paths, val_labels, transform=resize_transform)
 
-    visualize_random_images(train_dataset, class_names)
+    #visualize_random_images(train_dataset, class_names)
 
-    visualize_augmented_images(train_dataset, class_names, num_samples=5)
+    #visualize_augmented_images(train_dataset, class_names, num_samples=5)
 
     train_loader = DataLoader(train_dataset, batch_size=32, sampler=sampler, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=4)
@@ -132,6 +139,7 @@ def prepare_data(dataset_path):
 
 
 if __name__ == "__main__":
+
     train_loader, val_loader, class_names = prepare_data(DATASET_PATH)
     print(f"Classes: {class_names}")
     print(f"Training set size: {len(train_loader.dataset)}")
