@@ -94,7 +94,6 @@ def visualize_random_images(dataset, class_names):
 #         axes[i].axis('off')
 #     plt.show()
 
-
 # 6. Index Splitter + Handle Imbalanced Classes + Training set + Validation set
 def prepare_data(dataset_path):
     resize_transform = resize_trans(IMG_SIZE)
