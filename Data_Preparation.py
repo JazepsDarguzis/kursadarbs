@@ -52,7 +52,7 @@ class DefectDataset(torch.utils.data.Dataset):
         img_path = self.image_paths[idx]
         label = self.labels[idx]
         image = Image.open(img_path).convert('RGB')
-        image = np.array(image) / 255.0  # Нормализуем в [0, 1]
+        image = np.array(image)  # УБРАНО деление на 255.0, т.к. A.Normalize ожидает [0,255]
 
         if self.augment:
             image = self.augment(image=image)['image']
