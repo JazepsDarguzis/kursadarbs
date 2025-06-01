@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import random
 import kagglehub
 
+
 # Download latest version
 # DATASET_PATH = kagglehub.dataset_download("satishpaladi11/mechanic-component-images-normal-defected")
 # print(f"DATASET_PATH: {DATASET_PATH}")
@@ -22,7 +23,7 @@ IMG_SIZE = (224, 224)
 def resize_trans(IMG_SIZE):
     return A.Compose([
         A.Resize(*IMG_SIZE),
-        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),  # ImageNet нормализация
+        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         ToTensorV2()
     ])
 
@@ -52,15 +53,11 @@ class DefectDataset(torch.utils.data.Dataset):
         img_path = self.image_paths[idx]
         label = self.labels[idx]
         image = Image.open(img_path).convert('RGB')
-        image = np.array(image)  # УБРАНО деление на 255.0, т.к. A.Normalize ожидает [0,255]
-
+        image = np.array(image)
         if self.augment:
             image = self.augment(image=image)['image']
         elif self.transform:
             image = self.transform(image=image)['image']
-
-        # Отладочный вывод
-        # print(f"Image {img_path} min: {image.min().item()}, max: {image.max().item()}")
         return image, label
 
 def visualize_random_images(dataset, class_names):
@@ -98,7 +95,6 @@ def visualize_random_images(dataset, class_names):
 def prepare_data(dataset_path):
     resize_transform = resize_trans(IMG_SIZE)
     augmentation_transform = data_augmentation(IMG_SIZE)
-
     dataset = datasets.ImageFolder(dataset_path)
     image_paths = [os.path.join(dataset_path, img[0]) for img in dataset.imgs]
     labels = [img[1] for img in dataset.imgs]
@@ -113,18 +109,13 @@ def prepare_data(dataset_path):
     train_labels = [labels[i] for i in train_idx]
     val_paths = [image_paths[i] for i in val_idx]
     val_labels = [labels[i] for i in val_idx]
-    print("Sample train paths:", train_paths[:5])
-    print("Sample val paths:", val_paths[:5])
     class_counts = Counter(train_labels)
-    print("Class distribution in training set:", class_counts)
-    print("Class distribution in validation set:", Counter(val_labels))
     num_samples = len(train_labels)
     class_weights = {i: num_samples / (len(class_names) * count) for i, count in class_counts.items()}
     sample_weights = [class_weights[label] for label in train_labels]
     sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
     train_dataset = DefectDataset(train_paths, train_labels, transform=None, augment=augmentation_transform)
     val_dataset = DefectDataset(val_paths, val_labels, transform=resize_transform)
-
     train_loader = DataLoader(train_dataset, batch_size=32, sampler=sampler, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=0)
     return train_loader, val_loader, class_names
