@@ -3,31 +3,27 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QTabWidget,
     QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QPlainTextEdit, QProgressBar
 )
-from PyQt5.QtCore import QThread, pyqtSignal
-from defect_classification import run_training
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import cv2
-import os
-import random
 from worker_training import TrainingWorker
 import numpy as np
 import seaborn as sns
+from defect_classification import run_training
+from matplotlib.figure import Figure
+
 
 class HomePage(QWidget):
     update_text_signal = pyqtSignal(str)
-    update_status_signal = pyqtSignal(str)
+    stats_ready_signal = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
         self.process = None
         self.update_text_signal.connect(self.update_text)
-        self.update_status_signal.connect(self.update_status)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("🏠 Добро пожаловать в систему анализа дефектов"))
-        self.status_label = QLabel("")
-        layout.addWidget(self.status_label)
         button_layout = QHBoxLayout()
         self.run_button = QPushButton("Запустить анализ дефектов")
         self.run_button.clicked.connect(self.start_training)
@@ -36,7 +32,6 @@ class HomePage(QWidget):
         self.output_box = QPlainTextEdit()
         self.output_box.setReadOnly(True)
         layout.addWidget(self.output_box)
-# -script
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         layout.addWidget(self.progress_bar)
@@ -46,17 +41,13 @@ class HomePage(QWidget):
         self.output_box.appendPlainText(text)
         self.output_box.repaint()
 
-    def update_status(self, text):
-        self.status_label.setText(text)
-
     def start_training(self):
         self.run_button.setEnabled(False)
         self.run_button.setText("Обучение...")
         self.output_box.clear()
-        self.status_label.setText("")
         self.progress_bar.setValue(0)
         self.thread = QThread()
-        self.worker = TrainingWorker(self.progress_bar, self.output_box, self.update_text_signal, self.update_status_signal)
+        self.worker = TrainingWorker(self.progress_bar, self.output_box, self.update_text_signal)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(self.on_training_finished)
@@ -68,7 +59,7 @@ class HomePage(QWidget):
     def on_training_finished(self, history, base_path, data_set, sample_images, augmented_images, cm_data):
         self.run_button.setEnabled(True)
         self.run_button.setText("Запустить анализ дефектов")
-        self.parent().findChild(StatisticsPage, "StatisticsPage").show_training_statistics(history)
+        self.stats_ready_signal.emit(history)
         self.parent().findChild(MonitoringPage1, "MonitoringPage1").show_sample_images(sample_images)
         self.parent().findChild(MonitoringPage2, "MonitoringPage2").show_augmented_images(augmented_images)
         self.parent().findChild(DecisionMakingPage, "DecisionMakingPage").show_confusion_matrix(cm_data)
@@ -78,9 +69,17 @@ class StatisticsPage(QWidget):
         super().__init__(parent)
         self.setObjectName("StatisticsPage")
         self.layout = QVBoxLayout()
+        self.history = None
+        self.is_shown = False  # Флаг, чтобы графики отображались только один раз
         self.setLayout(self.layout)
 
+    def on_tab_changed(self, index):
+        if index == 1 and self.history is not None and not self.is_shown:
+            self.show_training_statistics(self.history)
+            self.is_shown = True
+
     def show_training_statistics(self, history):
+        self.history = history
         for i in reversed(range(self.layout.count())):
             self.layout.itemAt(i).widget().setParent(None)
         fig, ax = plt.subplots(1, 2, figsize=(10, 4))
@@ -161,6 +160,7 @@ class DecisionMakingPage(QWidget):
         ax.set_title('Матрица ошибок')
         ax.set_xlabel('Предсказано')
         ax.set_ylabel('Истина')
+        plt.tight_layout()
         canvas = FigureCanvas(fig)
         self.layout.addWidget(canvas)
 
@@ -170,11 +170,22 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Система анализа дефектов")
         self.setGeometry(100, 100, 800, 600)
         self.tabs = QTabWidget()
-        self.tabs.addTab(HomePage(), "Главная")
-        self.tabs.addTab(StatisticsPage(), "Статистика")
-        self.tabs.addTab(MonitoringPage1(), "Мониторинг 1")
-        self.tabs.addTab(MonitoringPage2(), "Мониторинг 2")
-        self.tabs.addTab(DecisionMakingPage(), "Принятие решений")
+        self.home_page = HomePage()
+        self.stats_page = StatisticsPage()
+        self.monitoring_page1 = MonitoringPage1()
+        self.monitoring_page2 = MonitoringPage2()
+        self.decision_page = DecisionMakingPage()
+
+        self.tabs.addTab(self.home_page, "Главная")
+        self.tabs.addTab(self.stats_page, "Статистика")
+        self.tabs.addTab(self.monitoring_page1, "Мониторинг 1")
+        self.tabs.addTab(self.monitoring_page2, "Мониторинг 2")
+        self.tabs.addTab(self.decision_page, "Принятие решений")
+
+        # Подключаем сигнал для обновления StatisticsPage
+        self.home_page.stats_ready_signal.connect(self.stats_page.show_training_statistics)
+        self.tabs.currentChanged.connect(self.stats_page.on_tab_changed)
+
         self.setCentralWidget(self.tabs)
 
 if __name__ == "__main__":
