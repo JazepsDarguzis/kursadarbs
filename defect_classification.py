@@ -35,7 +35,7 @@ class TrainingProgressCallback(Callback):
     def on_epoch_begin(self, epoch, logs=None):
         percent = int((epoch / self.total_epochs) * 100)
         self.progress_bar.setValue(percent)
-        self.text_signal.emit(f"▶ Эпоха {epoch+1}/{self.total_epochs}")
+        self.text_signal.emit(f"▶ Epoch {epoch+1}/{self.total_epochs}")
 
     def on_epoch_end(self, epoch, logs=None):
         acc = logs.get("accuracy")
@@ -43,15 +43,15 @@ class TrainingProgressCallback(Callback):
         val_acc = logs.get("val_accuracy")
         val_loss = logs.get("val_loss")
         self.text_signal.emit(
-            f"✅ Эпоха {epoch+1}: "
-            f"точность={acc:.4f}, потери={loss:.4f}, "
-            f"точность_валидация={val_acc:.4f}, потери_валидация={val_loss:.4f}"
+            f"✅ Epoch {epoch+1}: "
+            f"accuracy={acc:.4f}, losses={loss:.4f}, "
+            f"accuracy_validation={val_acc:.4f}, loss_validation={val_loss:.4f}"
         )
 
     def on_train_end(self, logs=None):
         self.progress_bar.setValue(100)
-        self.text_signal.emit("🎉 Обучение завершено!")
-        self.text_signal.emit("📊 Статистика готова!")
+        self.text_signal.emit("🎉 The training is complete!")
+        self.text_signal.emit("📊 The statistics are ready!")
 
 
 def run_training(progress_bar=None, text_output=None, text_signal=None):
@@ -143,12 +143,12 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     # Обучение модели
     steps_per_epoch = len(train_loader.dataset) // train_loader.batch_size
     validation_steps = len(val_loader.dataset) // val_loader.batch_size
-    progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, total_epochs=5)
+    progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, total_epochs=2)
 
     history = model.fit(
         train_generator,
         steps_per_epoch=steps_per_epoch,
-        epochs=5,
+        epochs=2,
         validation_data=val_generator,
         validation_steps=validation_steps,
         callbacks=[callback, earlystop, progress_cb]
