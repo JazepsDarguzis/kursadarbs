@@ -8,11 +8,6 @@
 #tensorflow.keras ошибки могут возникнуть из-за питона 3.13, используй 3.10
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-import cv2
 import random
 from PIL import Image
 from torchvision import datasets
@@ -29,16 +24,12 @@ from tensorflow.keras.callbacks import Callback
 from sklearn.metrics import confusion_matrix
 
 
-
-
-
 class TrainingProgressCallback(Callback):
-    def __init__(self, progress_bar, text_output, text_signal, status_signal, total_epochs):
+    def __init__(self, progress_bar, text_output, text_signal, total_epochs):
         super().__init__()
         self.progress_bar = progress_bar
         self.text_output = text_output
         self.text_signal = text_signal
-        self.status_signal = status_signal
         self.total_epochs = total_epochs
 
     def on_epoch_begin(self, epoch, logs=None):
@@ -60,10 +51,10 @@ class TrainingProgressCallback(Callback):
     def on_train_end(self, logs=None):
         self.progress_bar.setValue(100)
         self.text_signal.emit("🎉 Обучение завершено!")
-        self.status_signal.emit("📊 Статистика готова!")
+        self.text_signal.emit("📊 Статистика готова!")
 
 
-def run_training(progress_bar=None, text_output=None, text_signal=None, status_signal=None):
+def run_training(progress_bar=None, text_output=None, text_signal=None):
     tf.config.list_physical_devices('GPU')
     base_path = kagglehub.dataset_download("satishpaladi11/mechanic-component-images-normal-defected")
     train_loader, val_loader, class_names = prepare_data(base_path)
@@ -152,7 +143,7 @@ def run_training(progress_bar=None, text_output=None, text_signal=None, status_s
     # Обучение модели
     steps_per_epoch = len(train_loader.dataset) // train_loader.batch_size
     validation_steps = len(val_loader.dataset) // val_loader.batch_size
-    progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, status_signal, total_epochs=5)
+    progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, total_epochs=5)
 
     history = model.fit(
         train_generator,
