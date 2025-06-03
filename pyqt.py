@@ -1,17 +1,19 @@
 import sys
+import matplotlib
+matplotlib.use('Qt5Agg')  # Указываем использование PyQt5
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QTabWidget,
-    QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QPlainTextEdit, QProgressBar
+   QApplication, QMainWindow, QWidget, QTabWidget,
+   QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QPlainTextEdit, QProgressBar
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from defect_classification import run_training
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import cv2
-from worker_training import TrainingWorker
 import numpy as np
+from worker_training import TrainingWorker
 import seaborn as sns
-from defect_classification import run_training
-from matplotlib.figure import Figure
 
 
 class HomePage(QWidget):
@@ -64,13 +66,14 @@ class HomePage(QWidget):
         self.parent().findChild(MonitoringPage2, "MonitoringPage2").show_augmented_images(augmented_images)
         self.parent().findChild(DecisionMakingPage, "DecisionMakingPage").show_confusion_matrix(cm_data)
 
+
 class StatisticsPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("StatisticsPage")
         self.layout = QVBoxLayout()
         self.history = None
-        self.is_shown = False  # Флаг, чтобы графики отображались только один раз
+        self.is_shown = False
         self.setLayout(self.layout)
 
     def on_tab_changed(self, index):
@@ -95,6 +98,7 @@ class StatisticsPage(QWidget):
         canvas = FigureCanvas(fig)
         self.layout.addWidget(canvas)
 
+
 class MonitoringPage1(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -118,6 +122,7 @@ class MonitoringPage1(QWidget):
         plt.tight_layout()
         canvas = FigureCanvas(fig)
         self.layout.addWidget(canvas)
+
 
 class MonitoringPage2(QWidget):
     def __init__(self, parent=None):
@@ -144,6 +149,7 @@ class MonitoringPage2(QWidget):
         canvas = FigureCanvas(fig)
         self.layout.addWidget(canvas)
 
+
 class DecisionMakingPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -164,6 +170,7 @@ class DecisionMakingPage(QWidget):
         canvas = FigureCanvas(fig)
         self.layout.addWidget(canvas)
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -182,11 +189,12 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.monitoring_page2, "Monitoring 2")
         self.tabs.addTab(self.decision_page, "Decision-making")
 
-        # Подключаем сигнал для обновления StatisticsPage
+        # Подключаем сигналы
         self.home_page.stats_ready_signal.connect(self.stats_page.show_training_statistics)
         self.tabs.currentChanged.connect(self.stats_page.on_tab_changed)
 
         self.setCentralWidget(self.tabs)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
