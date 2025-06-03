@@ -120,9 +120,9 @@ def prepare_data(dataset_path):
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=0)
     return train_loader, val_loader, class_names
 
-# Код для тестирования модуля (опционально)
+# Loading dataset Code for module testing (optional)
 # if __name__ == '__main__':
-#     # Загрузка датасета
+#     # Dataset loading
 #     DATASET_PATH = kagglehub.dataset_download("satishpaladi11/mechanic-component-images-normal-defected")
 #     train_loader, val_loader, class_names = prepare_data(DATASET_PATH)
 #     print(f"Classes: {class_names}")
