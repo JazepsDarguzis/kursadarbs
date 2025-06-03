@@ -5,7 +5,6 @@
 # pip install keras
 # For working with images (Pillow):
 # pip install pillow
-#tensorflow.keras ошибки могут возникнуть из-за питона 3.13, используй 3.10
 
 import numpy as np
 import random
