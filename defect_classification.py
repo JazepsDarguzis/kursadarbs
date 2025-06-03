@@ -143,12 +143,12 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     # Обучение модели
     steps_per_epoch = len(train_loader.dataset) // train_loader.batch_size
     validation_steps = len(val_loader.dataset) // val_loader.batch_size
-    progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, total_epochs=2)
+    progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, total_epochs=50)
 
     history = model.fit(
         train_generator,
         steps_per_epoch=steps_per_epoch,
-        epochs=2,
+        epochs=50,
         validation_data=val_generator,
         validation_steps=validation_steps,
         callbacks=[callback, earlystop, progress_cb]
