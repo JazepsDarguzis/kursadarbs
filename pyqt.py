@@ -1,6 +1,6 @@
 import sys
 import matplotlib
-matplotlib.use('Qt5Agg')  # Указываем использование PyQt5
+matplotlib.use('Qt5Agg')
 from PyQt5.QtWidgets import (
    QApplication, QMainWindow, QWidget, QTabWidget,
    QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QPlainTextEdit, QProgressBar
@@ -189,7 +189,6 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.monitoring_page2, "Monitoring 2")
         self.tabs.addTab(self.decision_page, "Decision-making")
 
-        # Подключаем сигналы
         self.home_page.stats_ready_signal.connect(self.stats_page.show_training_statistics)
         self.tabs.currentChanged.connect(self.stats_page.on_tab_changed)
 
