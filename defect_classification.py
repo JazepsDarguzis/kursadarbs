@@ -1,5 +1,5 @@
 #%%
-# Требуемые пакеты:
+# Required Packages:
 # pip install numpy pandas matplotlib seaborn opencv-python kagglehub tensorflow scikit-learn
 # Для keras:
 # pip install keras
@@ -60,7 +60,6 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     train_loader, val_loader, class_names = prepare_data(base_path)
     num_classes = len(class_names)
 
-    # Собираем 5 случайных изображений (по одному на класс, если возможно)
     sample_images = []
     dataset = datasets.ImageFolder(base_path)
     class_indices = {i: [] for i in range(num_classes)}
@@ -71,7 +70,6 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
             img_path = random.choice(class_indices[class_id])
             sample_images.append((img_path, class_names[class_id]))
 
-    # Собираем аугментированные версии тех же изображений
     augmentation_transform = data_augmentation((224, 224))
     augmented_images = []
     for img_path, class_name in sample_images:
@@ -82,7 +80,7 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
 
     # print(f"Classes: {class_names}, Number of classes: {num_classes}")
     #%% mds
-    # ### тут можно посмотреть, что в датасете
+    # ### you can see what's in the dataset here
     #%%
     # print(f"There are {len(os.listdir(base_path))} type of dataset")
     #%%
@@ -98,7 +96,7 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     # plt.show()
 
     #%% md
-    # ## визуализация изображений
+    # ## image visualization
     #%%
     # fig, ax = plt.subplots(3, 3, figsize=(9, 8))
     # for i in range(min(3, len(data_set))):
@@ -113,17 +111,16 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     # plt.show()
     #%%
 
-    # ## модель на претрене ResNet50
+    # ##
     #%%
     train_generator = dataloader_to_keras_generator(train_loader, num_classes)
     val_generator = dataloader_to_keras_generator(val_loader, num_classes)
 
-    # Проверка одного батча
+    #
     # sample_images, sample_labels = next(train_generator)
     # print(f"Sample train batch shape: {sample_images.shape}, min: {sample_images.min()}, max: {sample_images.max()}")
     # print(f"Sample train labels shape: {sample_labels.shape}")
 
-    # Модель ResNet50
     resnet = ResNet50(include_top=False, input_shape=(224, 224, 3))
     for layer in resnet.layers:
         layer.trainable = False
@@ -134,13 +131,13 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     model = Model(resnet.input, model_output)
     # model.summary()
     #%%
-    # Компиляция модели
+    # Model compilation
     callback = ModelCheckpoint('./checkpoint.weights.h5', save_weights_only=True,
                                monitor='val_accuracy', mode='max')
     earlystop = EarlyStopping(monitor='val_accuracy', patience=10, mode='max', restore_best_weights=True)
     model.compile(optimizer=RMSprop(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
 
-    # Обучение модели
+    # Model training
     steps_per_epoch = len(train_loader.dataset) // train_loader.batch_size
     validation_steps = len(val_loader.dataset) // val_loader.batch_size
     progress_cb = TrainingProgressCallback(progress_bar, text_output, text_signal, total_epochs=50)
@@ -153,9 +150,7 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
         validation_steps=validation_steps,
         callbacks=[callback, earlystop, progress_cb]
     )
-    #меняй эпохи, если не хватает памяти
 
-    # Визуализация результатов обучения
     # plt.figure(figsize=(12, 4))
     # plt.subplot(1, 2, 1)
     # plt.plot(history.history['accuracy'], label='Train Accuracy')
@@ -169,7 +164,7 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     # plt.legend()
     # plt.show()
 
-    # Вычисление матрицы ошибок
+    # confusion matrix
     val_images, val_labels = [], []
     for images, labels in val_loader:
         val_images.append(images.numpy())
@@ -183,12 +178,9 @@ def run_training(progress_bar=None, text_output=None, text_signal=None):
     cm_data = (cm, class_names)
 
     model.save("model_for_raw_material.keras")
-    # сменил на керас, чтобы не было варнинга
+
     return history, base_path, class_names, sample_images, augmented_images, cm_data
-    #там будет рекомендации в терминале, что делать с варнингом: это предупреждение связано с внутренней
-    # реализацией pydataset и не является ошибкой. Оно не влияет на работу кода, обучению и сохранению
-    #
-    # Функция для преобразования DataLoader в генератор Keras
+
 def dataloader_to_keras_generator(dataloader, num_classes):
     while True:
         for images, labels in dataloader:
