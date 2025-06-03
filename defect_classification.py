@@ -3,7 +3,7 @@
 # pip install numpy pandas matplotlib seaborn opencv-python kagglehub tensorflow scikit-learn
 # Для keras:
 # pip install keras
-# Для работы с изображениями (Pillow):
+# For working with images (Pillow):
 # pip install pillow
 #tensorflow.keras ошибки могут возникнуть из-за питона 3.13, используй 3.10
 
